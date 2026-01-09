@@ -1,0 +1,112 @@
+<script>
+let tabs = [];
+let activeTab = -1;
+
+function ensureHttps(url) {
+    url = url.trim();
+    // Redirect old lcc-games links to JC Unblocked
+    if (url.toLowerCase().includes('lcc-games') || url.toLowerCase().includes('lcc-math')) {
+        url = 'https://jc-unblocked.github.io';
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+    }
+    return url;
+}
+
+function createTab(url = '') {
+    const tabId = tabs.length;
+    tabs.push({ id: tabId, url: url, history: [], historyIndex: -1 });
+    renderTabs();
+    switchTab(tabId);
+}
+
+function renderTabs() {
+    const tabsContainer = document.getElementById('tabs');
+    tabsContainer.innerHTML = '';
+    tabs.forEach(tab => {
+        const tabEl = document.createElement('div');
+        tabEl.className = 'tab tab-enter' + (tab.id === activeTab ? ' active' : '');
+        tabEl.innerHTML = `Tab ${tab.id + 1} <span class="close" onclick="closeTab(event, ${tab.id})">×</span>`;
+        tabEl.onclick = () => switchTab(tab.id);
+        tabsContainer.appendChild(tabEl);
+    });
+
+    const newTabBtn = document.createElement('div');
+    newTabBtn.className = 'new-tab-btn';
+    newTabBtn.textContent = '+';
+    newTabBtn.onclick = newTab;
+    tabsContainer.appendChild(newTabBtn);
+}
+
+function switchTab(tabId) {
+    activeTab = tabId;
+    renderTabs();
+    const tab = tabs[tabId];
+    const iframeContainer = document.getElementById('iframeContainer');
+
+    if (!tab.url) {
+        iframeContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">
+            Enter a URL to start browsing. 
+            brought to you by 
+            <a href="https://jc-unblocked.github.io" target="_blank" style="color:#0a84ff;text-decoration:none;">JC Unblocked</a>
+        </p>`;
+    } else {
+        const finalURL = \`https://yandhi.herokuapp.com/trgr.html?url=\${btoa(tab.url)}\`;
+        iframeContainer.innerHTML = \`<iframe src="\${finalURL}"></iframe>\`;
+    }
+
+    document.getElementById('urlInput').value = tab.url;
+}
+
+function openTab() {
+    if (activeTab === -1) { newTab(); return; }
+    let inputURL = document.getElementById('urlInput').value;
+    inputURL = ensureHttps(inputURL);
+
+    const tab = tabs[activeTab];
+    tab.url = inputURL;
+    tab.history = tab.history.slice(0, tab.historyIndex + 1);
+    tab.history.push(inputURL);
+    tab.historyIndex++;
+    switchTab(activeTab);
+}
+
+function newTab() { createTab(); }
+
+function closeTab(event, tabId) {
+    event.stopPropagation();
+    tabs = tabs.filter(t => t.id !== tabId);
+    if (activeTab === tabId) {
+        activeTab = tabs.length ? tabs[0].id : -1;
+        if (activeTab !== -1) switchTab(activeTab);
+        else document.getElementById('iframeContainer').innerHTML = '';
+    }
+    renderTabs();
+}
+
+function goBack() {
+    const tab = tabs[activeTab];
+    if (tab && tab.historyIndex > 0) {
+        tab.historyIndex--;
+        tab.url = tab.history[tab.historyIndex];
+        switchTab(activeTab);
+    }
+}
+
+function goForward() {
+    const tab = tabs[activeTab];
+    if (tab && tab.historyIndex < tab.history.length - 1) {
+        tab.historyIndex++;
+        tab.url = tab.history[tab.historyIndex];
+        switchTab(activeTab);
+    }
+}
+
+function reloadTab() {
+    if (activeTab !== -1) switchTab(activeTab);
+}
+
+// Initialize with one tab
+newTab();
+</script>

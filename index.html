@@ -3,18 +3,87 @@
 <head>
   <meta charset="utf-8" />
   <title>JC Browser</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: system-ui, Arial; margin: 0; padding: 12px; }
-    #controls { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-    #tabs { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+    :root{
+      --ui-height: 56px;
+      --gap: 8px;
+      --bg: #f8fafc;
+      --accent: #0a84ff;
+    }
+
+    html,body { height:100%; margin:0; }
+    body { font-family: system-ui, Arial, sans-serif; background:var(--bg); display:flex; flex-direction:column; }
+
+    /* Top controls */
+    #controls {
+      display:flex;
+      gap:var(--gap);
+      align-items:center;
+      padding:10px;
+      height:var(--ui-height);
+      box-sizing:border-box;
+      background:rgba(255,255,255,0.9);
+      z-index:20;
+      transition:transform .25s ease, opacity .25s ease;
+    }
+
+    /* Tabs row */
+    #tabs { display:flex; gap:6px; padding:8px; flex-wrap:wrap; align-items:center; background:transparent; }
+
     .tab { padding:6px 10px; background:#eee; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:8px; }
     .tab.active { background:#dfefff; font-weight:600; }
     .close { color:#900; cursor:pointer; padding-left:6px; }
-    .new-tab-btn { padding:6px 10px; background:#0a84ff; color:white; border-radius:6px; cursor:pointer; }
-    #iframeContainer { border:1px solid #ccc; height:480px; }
-    #iframeContainer iframe { width:100%; height:100%; border:0; }
-    input[type="text"] { flex:1; padding:6px 8px; border-radius:6px; border:1px solid #ccc; }
-    button { padding:6px 8px; border-radius:6px; }
+    .new-tab-btn { padding:6px 10px; background:var(--accent); color:white; border-radius:6px; cursor:pointer; }
+
+    /* Fullscreen container */
+    #app {
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      height: calc(100vh - var(--ui-height));
+      overflow:hidden;
+    }
+
+    /* Iframe area fills remaining space */
+    #iframeContainer {
+      flex:1;
+      border-top:1px solid #ddd;
+      background:#fff;
+      position:relative;
+      height:100%;
+      overflow:hidden;
+    }
+    #iframeContainer iframe { width:100%; height:100%; border:0; display:block; }
+
+    /* Fullscreen mode adjustments */
+    :fullscreen #controls,
+    :-webkit-full-screen #controls {
+      transform: translateY(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Small responsive tweaks */
+    @media (max-width:640px) {
+      #controls { padding:8px; gap:6px; }
+      input[type="text"] { min-width:120px; }
+    }
+
+    /* Floating fullscreen button */
+    #fsBtn {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 30;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -25,15 +94,20 @@
     <input id="urlInput" type="text" placeholder="Enter URL (example: example.com)" />
     <button id="openBtn">Open</button>
     <button id="newTabBtn">New Tab</button>
+    <div style="flex:1"></div>
+    <button id="enterFsBtn" title="Toggle fullscreen">⤢ Fullscreen</button>
   </div>
 
   <div id="tabs"></div>
 
-  <div id="iframeContainer">
-    <p style="text-align:center;margin-top:20px;">
-     welcome to the JC Unblocked Browser Enter a URL to start browsing. This browser was brought to you by
-      <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
-    </p>
+  <div id="app">
+    <div id="iframeContainer">
+      <p style="text-align:center;margin-top:20px;">
+        Enter a URL to start browsing. brought to you by
+        <a href="https://sites.google.com/view/jcunblockedio" target="_blank" rel="noopener">JC Unblocked</a>
+      </p>
+      <button id="fsBtn" style="display:none">Exit Fullscreen</button>
+    </div>
   </div>
 
   <script>
@@ -44,12 +118,9 @@
       url = url.trim();
       if (!url) return url;
       const lower = url.toLowerCase();
-
-      // Redirect old lcc-games links or JC Unblocked references
       if (lower.includes('lcc-games') || lower.includes('jc unblocked')) {
         return 'https://sites.google.com/view/jcunblockedio';
       }
-
       if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
         url = 'https://' + url;
       }
@@ -94,83 +165,16 @@
       if (!tab.url) {
         iframeContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">
             Enter a URL to start browsing. brought to you by
-            <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
+            <a href="https://sites.google.com/view/jcunblockedio" target="_blank" rel="noopener">JC Unblocked</a>
           </p>`;
       } else {
         let encoded;
         try {
           encoded = btoa(tab.url);
         } catch (err) {
-          // handle unicode URLs
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
+        // Use proxy encoding as before; if you want to test direct loading, replace finalURL with tab.url
         const finalURL = `https://yandhi.herokuapp.com/trgr.html?url=${encodeURIComponent(encoded)}`;
-        iframeContainer.innerHTML = `<iframe src="${finalURL}"></iframe>`;
-      }
 
-      document.getElementById('urlInput').value = tab.url || '';
-    }
-
-    function openTab() {
-      if (activeTab === -1) { createTab(); return; }
-      let inputURL = document.getElementById('urlInput').value;
-      inputURL = ensureHttps(inputURL);
-      const tab = tabs[activeTab];
-      tab.url = inputURL;
-      tab.history = tab.history.slice(0, tab.historyIndex + 1);
-      tab.history.push(inputURL);
-      tab.historyIndex++;
-      switchTab(activeTab);
-    }
-
-    function newTab() { createTab(); }
-
-    function closeTab(index) {
-      if (index < 0 || index >= tabs.length) return;
-      tabs.splice(index, 1);
-      if (tabs.length === 0) {
-        activeTab = -1;
-        document.getElementById('iframeContainer').innerHTML = '';
-      } else {
-        if (activeTab >= tabs.length) activeTab = tabs.length - 1;
-        switchTab(activeTab);
-      }
-      renderTabs();
-    }
-
-    function goBack() {
-      if (activeTab === -1) return;
-      const tab = tabs[activeTab];
-      if (tab && tab.historyIndex > 0) {
-        tab.historyIndex--;
-        tab.url = tab.history[tab.historyIndex];
-        switchTab(activeTab);
-      }
-    }
-
-    function goForward() {
-      if (activeTab === -1) return;
-      const tab = tabs[activeTab];
-      if (tab && tab.historyIndex < tab.history.length - 1) {
-        tab.historyIndex++;
-        tab.url = tab.history[tab.historyIndex];
-        switchTab(activeTab);
-      }
-    }
-
-    function reloadTab() {
-      if (activeTab !== -1) switchTab(activeTab);
-    }
-
-    // wire buttons
-    document.getElementById('openBtn').addEventListener('click', openTab);
-    document.getElementById('newTabBtn').addEventListener('click', newTab);
-    document.getElementById('backBtn').addEventListener('click', goBack);
-    document.getElementById('forwardBtn').addEventListener('click', goForward);
-    document.getElementById('reloadBtn').addEventListener('click', reloadTab);
-
-    // Initialize with one tab
-    createTab();
-  </script>
-</body>
-</html>
+        iframe

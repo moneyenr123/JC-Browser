@@ -4,10 +4,12 @@ let activeTab = -1;
 
 function ensureHttps(url) {
     url = url.trim();
+
     // Redirect old lcc-games links to JC Unblocked
     if (url.toLowerCase().includes('lcc-games') || url.toLowerCase().includes('lcc-math')) {
-        url = 'https://jc-unblocked.github.io';
+        url = 'https://sites.google.com/view/jcunblockedio';
     }
+
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
     }
@@ -49,7 +51,9 @@ function switchTab(tabId) {
         iframeContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">
             Enter a URL to start browsing. 
             brought to you by 
-            <a href="https://jc-unblocked.github.io" target="_blank" style="color:#0a84ff;text-decoration:none;">JC Unblocked</a>
+            <a href="https://sites.google.com/view/jcunblockedio" target="_blank" style="color:#0a84ff;text-decoration:none;">
+                JC Unblocked
+            </a>
         </p>`;
     } else {
         const finalURL = \`https://yandhi.herokuapp.com/trgr.html?url=\${btoa(tab.url)}\`;

@@ -40,7 +40,6 @@
   </style>
 </head>
 <body>
-
   <div id="controls">
     <button id="backBtn">◀</button>
     <button id="forwardBtn">▶</button>
@@ -52,7 +51,7 @@
 
   <div id="tabs"></div>
 
-  <!-- ⭐ Roblox icon placed AFTER tabs so nothing breaks ⭐ -->
+  <!-- Roblox logo AFTER tabs so it can't break layout -->
   <div id="centerIcon">
     <img src="https://cdn2.lnk.bi/profilepics/-1490686_20230215851.png" id="robloxNowBtn" alt="Roblox">
   </div>
@@ -73,6 +72,7 @@
       if (!url) return url;
       const lower = url.toLowerCase();
 
+      // Redirect old lcc-games links or JC Unblocked references
       if (lower.includes('lcc-games') || lower.includes('jc unblocked')) {
         return 'https://sites.google.com/view/jcunblockedio';
       }
@@ -96,113 +96,4 @@
       tabs.forEach((tab, index) => {
         const tabEl = document.createElement('div');
         tabEl.className = 'tab' + (index === activeTab ? ' active' : '');
-        tabEl.innerHTML = `Tab ${index + 1} <span class="close" data-index="${index}">×</span>`;
-        tabEl.onclick = () => switchTab(index);
-        tabsContainer.appendChild(tabEl);
-
-        const closeBtn = tabEl.querySelector('.close');
-        closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeTab(index); });
-      });
-
-      const newTabBtn = document.createElement('div');
-      newTabBtn.className = 'new-tab-btn';
-      newTabBtn.textContent = '+';
-      newTabBtn.onclick = newTab;
-      tabsContainer.appendChild(newTabBtn);
-    }
-
-    function switchTab(index) {
-      if (index < 0 || index >= tabs.length) return;
-      activeTab = index;
-      renderTabs();
-      const tab = tabs[index];
-      const iframeContainer = document.getElementById('iframeContainer');
-
-      if (!tab.url) {
-        iframeContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">
-            Enter a URL to start browsing. brought to you by
-            <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
-          </p>`;
-      } else {
-        let encoded;
-        try {
-          encoded = btoa(tab.url);
-        } catch (err) {
-          encoded = btoa(unescape(encodeURIComponent(tab.url)));
-        }
-        const finalURL = \`https://yandhi.herokuapp.com/trgr.html?url=\${encodeURIComponent(encoded)}\`;
-        iframeContainer.innerHTML = \`<iframe src="\${finalURL}" allowfullscreen></iframe>\`;
-      }
-
-      document.getElementById('urlInput').value = tab.url || '';
-    }
-
-    function openTab() {
-      if (activeTab === -1) { createTab(); return; }
-      let inputURL = document.getElementById('urlInput').value;
-      inputURL = ensureHttps(inputURL);
-      const tab = tabs[activeTab];
-      tab.url = inputURL;
-      tab.history = tab.history.slice(0, tab.historyIndex + 1);
-      tab.history.push(inputURL);
-      tab.historyIndex++;
-      switchTab(activeTab);
-    }
-
-    function newTab() { createTab(); }
-
-    function closeTab(index) {
-      if (index < 0 || index >= tabs.length) return;
-      tabs.splice(index, 1);
-      if (tabs.length === 0) {
-        activeTab = -1;
-        document.getElementById('iframeContainer').innerHTML = '';
-      } else {
-        if (activeTab >= tabs.length) activeTab = tabs.length - 1;
-        switchTab(activeTab);
-      }
-      renderTabs();
-    }
-
-    function goBack() {
-      if (activeTab === -1) return;
-      const tab = tabs[activeTab];
-      if (tab && tab.historyIndex > 0) {
-        tab.historyIndex--;
-        tab.url = tab.history[tab.historyIndex];
-        switchTab(activeTab);
-      }
-    }
-
-    function goForward() {
-      if (activeTab === -1) return;
-      const tab = tabs[activeTab];
-      if (tab && tab.historyIndex < tab.history.length - 1) {
-        tab.historyIndex++;
-        tab.url = tab.history[tab.historyIndex];
-        switchTab(activeTab);
-      }
-    }
-
-    function reloadTab() {
-      if (activeTab !== -1) switchTab(activeTab);
-    }
-
-    // ⭐ Roblox Now.gg Button
-    document.getElementById("robloxNowBtn").addEventListener("click", () => {
-      window.open("https://now.gg/apps/a/19900/b.html", "_blank");
-    });
-
-    // Wire buttons
-    document.getElementById('openBtn').addEventListener('click', openTab);
-    document.getElementById('newTabBtn').addEventListener('click', newTab);
-    document.getElementById('backBtn').addEventListener('click', goBack);
-    document.getElementById('forwardBtn').addEventListener('click', goForward);
-    document.getElementById('reloadBtn').addEventListener('click', reloadTab);
-
-    // Initialize with one tab
-    createTab();
-  </script>
-
-</body>
-</html>
+        tabEl.innerHTML

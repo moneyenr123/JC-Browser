@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>JC Browser</title>
+
   <style>
     html, body { height: 100%; }
     body { font-family: system-ui, Arial; margin: 0; padding: 12px; display: flex; flex-direction: column; }
@@ -14,15 +15,34 @@
     .close { color:#900; cursor:pointer; padding-left:6px; }
     .new-tab-btn { padding:6px 10px; background:#0a84ff; color:white; border-radius:6px; cursor:pointer; }
 
-    /* Make iframe container fill the remaining viewport space */
     #iframeContainer { border:1px solid #ccc; flex: 1 1 auto; min-height: 0; overflow: hidden; }
     #iframeContainer iframe { width:100%; height:100%; border:0; display:block; }
 
     input[type="text"] { flex:1; padding:6px 8px; border-radius:6px; border:1px solid #ccc; }
     button { padding:6px 8px; border-radius:6px; }
+
+    /* Center Roblox icon */
+    #centerIcon {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    #centerIcon img {
+      width: 110px;
+      height: 110px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    #centerIcon img:hover {
+      transform: scale(1.12);
+    }
   </style>
 </head>
+
 <body>
+
   <div id="controls">
     <button id="backBtn">◀</button>
     <button id="forwardBtn">▶</button>
@@ -32,11 +52,17 @@
     <button id="newTabBtn">New Tab</button>
   </div>
 
+  <!-- ⭐ Center Roblox Button ⭐ -->
+  <div id="centerIcon">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Roblox_logo_2022.svg" id="robloxNowBtn" alt="Roblox Now.gg">
+  </div>
+
   <div id="tabs"></div>
 
   <div id="iframeContainer">
     <p style="text-align:center;margin-top:20px;">
-      Welcome to the Jc Unblocked Browser Enter a URL to start browsing. this unblocked web browser is brought to you by
+      Welcome to the JC Unblocked Browser. Enter a URL to start browsing.  
+      This unblocked web browser is brought to you by  
       <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
     </p>
   </div>
@@ -50,7 +76,6 @@
       if (!url) return url;
       const lower = url.toLowerCase();
 
-      // Redirect old lcc-games links or JC Unblocked references
       if (lower.includes('lcc-games') || lower.includes('jc unblocked')) {
         return 'https://sites.google.com/view/jcunblockedio';
       }
@@ -98,7 +123,8 @@
 
       if (!tab.url) {
         iframeContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">
-            Enter a URL to start browsing. brought to you by
+            Enter a URL to start browsing.  
+            brought to you by  
             <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
           </p>`;
       } else {
@@ -106,7 +132,6 @@
         try {
           encoded = btoa(tab.url);
         } catch (err) {
-          // handle unicode URLs
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
         const finalURL = `https://yandhi.herokuapp.com/trgr.html?url=${encodeURIComponent(encoded)}`;
@@ -167,7 +192,12 @@
       if (activeTab !== -1) switchTab(activeTab);
     }
 
-    // wire buttons
+    // ⭐ Roblox Now.gg Button
+    document.getElementById("robloxNowBtn").addEventListener("click", () => {
+      window.open("https://now.gg/apps/roblox-corporation/5349/roblox.html", "_blank");
+    });
+
+    // Wire buttons
     document.getElementById('openBtn').addEventListener('click', openTab);
     document.getElementById('newTabBtn').addEventListener('click', newTab);
     document.getElementById('backBtn').addEventListener('click', goBack);
@@ -177,5 +207,6 @@
     // Initialize with one tab
     createTab();
   </script>
+
 </body>
 </html>

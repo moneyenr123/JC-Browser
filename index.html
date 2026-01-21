@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8" />
   <title>JC Browser</title>
-
   <style>
     html, body { height: 100%; }
     body { font-family: system-ui, Arial; margin: 0; padding: 12px; display: flex; flex-direction: column; }
@@ -40,7 +39,6 @@
     }
   </style>
 </head>
-
 <body>
 
   <div id="controls">
@@ -52,17 +50,16 @@
     <button id="newTabBtn">New Tab</button>
   </div>
 
-  <!-- ⭐ Center Roblox Button ⭐ -->
+  <!-- ⭐ CENTERED ROBLOX LOGO BUTTON ⭐ -->
   <div id="centerIcon">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Roblox_logo_2022.svg" id="robloxNowBtn" alt="Roblox Now.gg">
+    <img src="https://cdn2.lnk.bi/profilepics/-1490686_20230215851.png" id="robloxNowBtn" alt="Roblox">
   </div>
 
   <div id="tabs"></div>
 
   <div id="iframeContainer">
     <p style="text-align:center;margin-top:20px;">
-      Welcome to the JC Unblocked Browser. Enter a URL to start browsing.  
-      This unblocked web browser is brought to you by  
+      Welcome to the Jc Unblocked Browser Enter a URL to start browsing. this unblocked web browser is brought to you by
       <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
     </p>
   </div>
@@ -123,8 +120,7 @@
 
       if (!tab.url) {
         iframeContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">
-            Enter a URL to start browsing.  
-            brought to you by  
+            Enter a URL to start browsing. brought to you by
             <a href="https://sites.google.com/view/jcunblockedio" target="_blank">JC Unblocked</a>
           </p>`;
       } else {
@@ -134,8 +130,8 @@
         } catch (err) {
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
-        const finalURL = `https://yandhi.herokuapp.com/trgr.html?url=${encodeURIComponent(encoded)}`;
-        iframeContainer.innerHTML = `<iframe src="${finalURL}" allowfullscreen></iframe>`;
+        const finalURL = \`https://yandhi.herokuapp.com/trgr.html?url=\${encodeURIComponent(encoded)}\`;
+        iframeContainer.innerHTML = \`<iframe src="\${finalURL}" allowfullscreen></iframe>\`;
       }
 
       document.getElementById('urlInput').value = tab.url || '';
@@ -194,7 +190,7 @@
 
     // ⭐ Roblox Now.gg Button
     document.getElementById("robloxNowBtn").addEventListener("click", () => {
-      window.open("https://now.gg/apps/roblox-corporation/5349/roblox.html", "_blank");
+      window.open("https://now.gg/apps/a/19900/b.html", "_blank");
     });
 
     // Wire buttons

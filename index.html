@@ -109,7 +109,7 @@
           // handle unicode URLs
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
-        const finalURL = `https://yandhi.herokuapp.com/trgr.html?url=
+        const finalURL = `http://84.17.47.150:9002
 ${encodeURIComponent(encoded)}`;
         iframeContainer.innerHTML = `<iframe src="${finalURL}" allowfullscreen></iframe>`;
       }

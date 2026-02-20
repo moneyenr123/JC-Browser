@@ -3,25 +3,135 @@
 <head>
   <meta charset="utf-8" />
   <title>JC Browser</title>
+
   <style>
+    /* THEME VARIABLES */
+    :root {
+      --bg: #ffffff;
+      --surface: #f2f2f2;
+      --text: #000000;
+      --accent: #0a84ff;
+      --tab-bg: #eee;
+      --tab-active: #dfefff;
+      --border: #ccc;
+    }
+
+    .dark {
+      --bg: #000000;
+      --surface: #111111;
+      --text: #ffffff;
+      --accent: #1f6bff;
+      --tab-bg: #1a1a1a;
+      --tab-active: #333333;
+      --border: #333333;
+    }
+
     html, body { height: 100%; }
-    body { font-family: system-ui, Arial; margin: 0; padding: 12px; display: flex; flex-direction: column; }
+    body {
+      font-family: system-ui, Arial;
+      margin: 0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--text);
+    }
 
     #controls { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
     #tabs { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
-    .tab { padding:6px 10px; background:#eee; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:8px; }
-    .tab.active { background:#dfefff; font-weight:600; }
+
+    .tab {
+      padding:6px 10px;
+      background: var(--tab-bg);
+      border-radius:6px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color: var(--text);
+    }
+
+    .tab.active {
+      background: var(--tab-active);
+      font-weight:600;
+    }
+
     .close { color:#900; cursor:pointer; padding-left:6px; }
-    .new-tab-btn { padding:6px 10px; background:#0a84ff; color:white; border-radius:6px; cursor:pointer; }
 
-    /* Make iframe container fill the remaining viewport space */
-    #iframeContainer { border:1px solid #ccc; flex: 1 1 auto; min-height: 0; overflow: hidden; }
-    #iframeContainer iframe { width:100%; height:100%; border:0; display:block; }
+    .new-tab-btn {
+      padding:6px 10px;
+      background: var(--accent);
+      color:white;
+      border-radius:6px;
+      cursor:pointer;
+    }
 
-    input[type="text"] { flex:1; padding:6px 8px; border-radius:6px; border:1px solid #ccc; }
-    button { padding:6px 8px; border-radius:6px; }
+    #iframeContainer {
+      border:1px solid var(--border);
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    #iframeContainer iframe {
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+    }
+
+    input[type="text"] {
+      flex:1;
+      padding:6px 8px;
+      border-radius:6px;
+      border:1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    button {
+      padding:6px 8px;
+      border-radius:6px;
+      background: var(--surface);
+      color: var(--text);
+      border:1px solid var(--border);
+      cursor:pointer;
+    }
+
+    /* DARK MODE SWITCH */
+    .switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+      background: #555;
+      border-radius: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: 0.25s;
+    }
+
+    .switch.active {
+      background: var(--accent);
+    }
+
+    .switch.active::after {
+      left: 26px;
+    }
   </style>
 </head>
+
 <body>
   <div id="controls">
     <button id="backBtn">◀</button>
@@ -30,6 +140,9 @@
     <input id="urlInput" type="text" placeholder="Enter URL (example: example.com)" />
     <button id="openBtn">Open</button>
     <button id="newTabBtn">New Tab</button>
+
+    <!-- DARK MODE SWITCH -->
+    <div id="themeSwitch" class="switch"></div>
   </div>
 
   <div id="tabs"></div>
@@ -42,6 +155,33 @@
   </div>
 
   <script>
+    /* ---------------------- DARK MODE LOGIC ---------------------- */
+
+    const themeSwitch = document.getElementById("themeSwitch");
+
+    function applyTheme(mode) {
+      if (mode === "dark") {
+        document.body.classList.add("dark");
+        themeSwitch.classList.add("active");
+      } else {
+        document.body.classList.remove("dark");
+        themeSwitch.classList.remove("active");
+      }
+      localStorage.setItem("jc_theme", mode);
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem("jc_theme") || "light";
+    applyTheme(savedTheme);
+
+    // Toggle theme
+    themeSwitch.onclick = () => {
+      const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
+      applyTheme(newTheme);
+    };
+
+    /* ---------------------- ORIGINAL BROWSER CODE ---------------------- */
+
     let tabs = [];
     let activeTab = -1;
 
@@ -50,7 +190,6 @@
       if (!url) return url;
       const lower = url.toLowerCase();
 
-      // Redirect old lcc-games links or JC Unblocked references
       if (lower.includes('lcc-games') || lower.includes('jc unblocked')) {
         return 'https://sites.google.com/view/jcunblockedio';
       }
@@ -106,11 +245,11 @@
         try {
           encoded = btoa(tab.url);
         } catch (err) {
-          // handle unicode URLs
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
-        const finalURL = `http://84.17.47.150:9002
-${encodeURIComponent(encoded)}`;
+
+        const finalURL = `http://84.17.47.150:9002/${encodeURIComponent(encoded)}`;
+
         iframeContainer.innerHTML = `<iframe src="${finalURL}" allowfullscreen></iframe>`;
       }
 
@@ -168,15 +307,13 @@ ${encodeURIComponent(encoded)}`;
       if (activeTab !== -1) switchTab(activeTab);
     }
 
-    // wire buttons
     document.getElementById('openBtn').addEventListener('click', openTab);
     document.getElementById('newTabBtn').addEventListener('click', newTab);
     document.getElementById('backBtn').addEventListener('click', goBack);
     document.getElementById('forwardBtn').addEventListener('click', goForward);
     document.getElementById('reloadBtn').addEventListener('click', reloadTab);
 
-    // Initialize with one tab
     createTab();
   </script>
 </body>
-</html> 
+</html>

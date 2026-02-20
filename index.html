@@ -109,7 +109,8 @@
           // handle unicode URLs
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
-        const finalURL = `https://coproxy.io/free-web-proxy/${encodeURIComponent(encoded)}`;
+        const finalURL = `https://yandhi.herokuapp.com/trgr.html?url=
+${encodeURIComponent(encoded)}`;
         iframeContainer.innerHTML = `<iframe src="${finalURL}" allowfullscreen></iframe>`;
       }
 

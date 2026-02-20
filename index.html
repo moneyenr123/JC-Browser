@@ -170,11 +170,9 @@
       localStorage.setItem("jc_theme", mode);
     }
 
-    // Load saved theme
     const savedTheme = localStorage.getItem("jc_theme") || "light";
     applyTheme(savedTheme);
 
-    // Toggle theme
     themeSwitch.onclick = () => {
       const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
       applyTheme(newTheme);
@@ -190,7 +188,8 @@
       if (!url) return url;
       const lower = url.toLowerCase();
 
-      if (lower.includes('lcc-games') || lower.includes('jc unblocked')) {
+      /* FIXED: removed lcc-games ONLY */
+      if (lower.includes('jc unblocked')) {
         return 'https://sites.google.com/view/jcunblockedio';
       }
 

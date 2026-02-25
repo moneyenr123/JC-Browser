@@ -247,8 +247,8 @@
           encoded = btoa(unescape(encodeURIComponent(tab.url)));
         }
 
-        const finalURL = `endis.rest
-${encodeURIComponent(encoded)}`;
+      const finalURL = `https://endis.rest/${encodeURIComponent(encoded)}`;
+
 
         iframeContainer.innerHTML = `<iframe src="${finalURL}" allowfullscreen></iframe>`;
       }

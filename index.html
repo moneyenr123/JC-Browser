@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>JC Browser</title>
+  <title>JC Browser (Locked)</title>
 
   <style>
     :root {
@@ -22,29 +22,26 @@
     }
 
     html, body {
-      height: 100%;
       margin: 0;
-      font-family: system-ui, Arial;
+      height: 100%;
       background: var(--bg);
       color: var(--text);
+      font-family: system-ui, Arial;
       display: flex;
       flex-direction: column;
     }
 
-    /* Top bar */
     #topbar {
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       gap: 12px;
       padding: 10px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      font-size: 14px;
       font-weight: 600;
     }
 
-    /* Switch */
     .switch {
       position: relative;
       width: 60px;
@@ -74,13 +71,6 @@
       left: 34px;
     }
 
-    /* Iframe container */
-    #iframeContainer {
-      flex: 1;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-    }
-
     iframe {
       width: 100%;
       height: 100%;
@@ -98,12 +88,10 @@
     <span>Dark Mode</span>
   </div>
 
-  <div id="iframeContainer">
-    <iframe src="https://endis.rest" allowfullscreen></iframe>
-  </div>
+  <iframe id="proxyFrame" src="https://endis.rest" allowfullscreen></iframe>
 
   <script>
-    /* DARK MODE LOGIC */
+    /* ------------------ DARK MODE ------------------ */
     const themeSwitch = document.getElementById("themeSwitch");
 
     function applyTheme(mode) {
@@ -122,6 +110,35 @@
     themeSwitch.onclick = () => {
       const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
       applyTheme(newTheme);
+    };
+
+    /* ------------------ BLOCK NEW TABS ------------------ */
+
+    // Block window.open inside iframe
+    const iframe = document.getElementById("proxyFrame");
+
+    iframe.onload = () => {
+      try {
+        const win = iframe.contentWindow;
+
+        // Override window.open
+        win.open = function() {
+          console.log("Blocked window.open()");
+          return null;
+        };
+
+        // Override target=_blank links
+        win.document.addEventListener("click", (e) => {
+          const link = e.target.closest("a");
+          if (link && link.target === "_blank") {
+            e.preventDefault();
+            console.log("Blocked new tab link");
+          }
+        });
+
+      } catch (err) {
+        // Cross-origin protection (normal)
+      }
     };
   </script>
 

@@ -10,8 +10,6 @@
       --surface: #f2f2f2;
       --text: #000000;
       --accent: #0a84ff;
-      --tab-bg: #eee;
-      --tab-active: #dfefff;
       --border: #ccc;
     }
 
@@ -20,82 +18,47 @@
       --surface: #111111;
       --text: #ffffff;
       --accent: #1f6bff;
-      --tab-bg: #1a1a1a;
-      --tab-active: #333333;
       --border: #333333;
     }
 
-    html, body { height: 100%; }
-    body {
-      font-family: system-ui, Arial;
+    html, body {
+      height: 100%;
       margin: 0;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
+      font-family: system-ui, Arial;
       background: var(--bg);
       color: var(--text);
+      display: flex;
+      flex-direction: column;
     }
 
-    #controls { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-    #tabs { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
-
-    .tab {
-      padding:6px 10px;
-      background: var(--tab-bg);
-      border-radius:6px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color: var(--text);
-    }
-
-    .tab.active {
-      background: var(--tab-active);
-      font-weight:600;
-    }
-
-    .close { color:#900; cursor:pointer; padding-left:6px; }
-
-    .new-tab-btn {
-      padding:6px 10px;
-      background: var(--accent);
-      color:white;
-      border-radius:6px;
-      cursor:pointer;
-    }
-
-    #iframeContainer {
-      border:1px solid var(--border);
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: hidden;
+    /* Top bar */
+    #topbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 10px;
       background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      font-weight: 600;
     }
 
-    #iframeContainer iframe {
-      width:100%;
-      height:100%;
-      border:0;
-      display:block;
-    }
-
-    /* DARK MODE SWITCH */
+    /* Switch */
     .switch {
       position: relative;
-      width: 50px;
-      height: 26px;
+      width: 60px;
+      height: 28px;
       background: #555;
       border-radius: 20px;
       cursor: pointer;
-      flex-shrink: 0;
     }
 
     .switch::after {
       content: "";
       position: absolute;
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       background: white;
       border-radius: 50%;
       top: 2px;
@@ -108,26 +71,39 @@
     }
 
     .switch.active::after {
-      left: 26px;
+      left: 34px;
+    }
+
+    /* Iframe container */
+    #iframeContainer {
+      flex: 1;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
     }
   </style>
 </head>
 
 <body>
-  <div id="controls">
-    <button id="backBtn">◀</button>
-    <button id="forwardBtn">▶</button>
-    <button id="reloadBtn">⟳</button>
-    <button id="newTabBtn">New Tab</button>
+
+  <div id="topbar">
+    <span>Light Mode</span>
     <div id="themeSwitch" class="switch"></div>
+    <span>Dark Mode</span>
   </div>
 
-  <div id="tabs"></div>
-
-  <div id="iframeContainer"></div>
+  <div id="iframeContainer">
+    <iframe src="https://endis.rest" allowfullscreen></iframe>
+  </div>
 
   <script>
-    /* ---------------------- DARK MODE ---------------------- */
+    /* DARK MODE LOGIC */
     const themeSwitch = document.getElementById("themeSwitch");
 
     function applyTheme(mode) {
@@ -147,88 +123,7 @@
       const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
       applyTheme(newTheme);
     };
-
-    /* ---------------------- JC BROWSER ---------------------- */
-
-    // SET YOUR PROXY HERE
-    const PROXY_URL = "https://endis.rest";  
-    // You can replace with:
-    // const PROXY_URL = "https://your-rammerhead.herokuapp.com";
-    // const PROXY_URL = "https://your-roxy.herokuapp.com";
-
-    let tabs = [];
-    let activeTab = -1;
-
-    function createTab() {
-      tabs.push({});
-      activeTab = tabs.length - 1;
-      renderTabs();
-      switchTab(activeTab);
-    }
-
-    function renderTabs() {
-      const tabsContainer = document.getElementById('tabs');
-      tabsContainer.innerHTML = '';
-
-      tabs.forEach((tab, index) => {
-        const tabEl = document.createElement('div');
-        tabEl.className = 'tab' + (index === activeTab ? ' active' : '');
-        tabEl.innerHTML = `Tab ${index + 1} <span class="close" data-index="${index}">×</span>`;
-        tabEl.onclick = () => switchTab(index);
-        tabsContainer.appendChild(tabEl);
-
-        tabEl.querySelector('.close').onclick = (e) => {
-          e.stopPropagation();
-          closeTab(index);
-        };
-      });
-
-      const newTabBtn = document.createElement('div');
-      newTabBtn.className = 'new-tab-btn';
-      newTabBtn.textContent = '+';
-      newTabBtn.onclick = createTab;
-      tabsContainer.appendChild(newTabBtn);
-    }
-
-    function switchTab(index) {
-      if (index < 0 || index >= tabs.length) return;
-      activeTab = index;
-      renderTabs();
-
-      document.getElementById('iframeContainer').innerHTML =
-        `<iframe src="${PROXY_URL}" allowfullscreen></iframe>`;
-    }
-
-    function closeTab(index) {
-      tabs.splice(index, 1);
-      if (tabs.length === 0) {
-        activeTab = -1;
-        document.getElementById('iframeContainer').innerHTML = '';
-      } else {
-        if (activeTab >= tabs.length) activeTab = tabs.length - 1;
-        switchTab(activeTab);
-      }
-      renderTabs();
-    }
-
-    document.getElementById('backBtn').onclick = () => {
-      const iframe = document.querySelector("#iframeContainer iframe");
-      if (iframe) iframe.contentWindow.history.back();
-    };
-
-    document.getElementById('forwardBtn').onclick = () => {
-      const iframe = document.querySelector("#iframeContainer iframe");
-      if (iframe) iframe.contentWindow.history.forward();
-    };
-
-    document.getElementById('reloadBtn').onclick = () => {
-      const iframe = document.querySelector("#iframeContainer iframe");
-      if (iframe) iframe.contentWindow.location.reload();
-    };
-
-    document.getElementById('newTabBtn').onclick = createTab;
-
-    createTab();
   </script>
+
 </body>
 </html>

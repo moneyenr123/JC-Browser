@@ -1,145 +1,665 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>JC Browser</title>
-
+  <meta charset="UTF-8" />
+  <title>JCMX – Dirt Bike</title>
+  
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="apple-touch-icon" href="../favicon.png">
+  <meta name="apple-mobile-web-app-title" content="JC Mini Games">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
   <style>
     :root {
-      --bg: #ffffff;
-      --surface: #f2f2f2;
-      --text: #000000;
-      --accent: #0a84ff;
-      --border: #ccc;
+      --bg: #05060a;
+      --bg-soft: #0b0f1b;
+      --fg: #f5f5f7;
+      --accent: #00ff88;
+      --accent-soft: rgba(0, 255, 136, 0.2);
+      --danger: #ff4b5c;
+      --panel: rgba(5, 7, 15, 0.92);
+      --shadow-strong: 0 18px 40px rgba(0, 0, 0, 0.9);
+      --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.7);
     }
 
-    .dark {
-      --bg: #000000;
-      --surface: #111111;
-      --text: #ffffff;
-      --accent: #1f6bff;
-      --border: #333333;
-    }
-
-    html, body {
-      margin: 0;
-      height: 100%;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; }
+    
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
       background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, Arial;
-      display: flex;
-      flex-direction: column;
+      color: var(--fg);
+      overflow: hidden;
+      touch-action: none;
     }
 
-    #topbar {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
+    #game-root { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+    .top-bar {
+      height: 46px; display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 10px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08); z-index: 10;
     }
 
-    .switch {
-      position: relative;
-      width: 60px;
-      height: 28px;
-      background: #555;
-      border-radius: 20px;
-      cursor: pointer;
+    .logo { font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; }
+    .logo-main { color: var(--accent); }
+    .logo-sub { color: #ffffff; }
+
+    .top-meta { display: flex; gap: 6px; font-size: 0.75rem; font-weight: 600; }
+    .pill { padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.1); }
+    .pill-accent { border-color: var(--accent); color: var(--accent); }
+    .pill-trick { color: #ff00ea; text-shadow: 0 0 8px rgba(255, 0, 234, 0.8); display: none; }
+
+    .game-shell { position: relative; flex: 1; display: flex; align-items: stretch; justify-content: center; }
+    #game-canvas { width: 100vw; height: calc(100vh - 46px); display: block; }
+
+    .menu-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    .menu-overlay.hidden { display: none; }
+
+    .menu-panel {
+      min-width: min(600px, 92vw); padding: 24px; border-radius: 18px;
+      background: var(--panel); border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: var(--shadow-strong); display: flex; flex-direction: column; gap: 16px;
     }
 
-    .switch::after {
-      content: "";
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      background: white;
-      border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: 0.25s;
+    .menu-panel h1 { font-size: 2rem; letter-spacing: 0.15em; text-transform: uppercase; text-align: center; }
+    .menu-panel h2 { font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;}
+    
+    .bike-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .bike-card {
+      border-radius: 12px; border: 2px solid transparent; background: rgba(255,255,255,0.05);
+      padding: 10px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; color: var(--fg);
+      transition: all 0.2s;
     }
+    .bike-card:hover { background: rgba(255,255,255,0.1); }
+    .bike-card.active { border-color: var(--accent); background: var(--accent-soft); }
+    .bike-color { width: 100%; height: 24px; border-radius: 6px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+    .bike-label { font-size: 0.8rem; text-align: center; font-weight: bold; }
 
-    .switch.active {
-      background: var(--accent);
+    .level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 8px; max-height: 200px; overflow-y: auto; }
+    .level-btn { border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.5); color: #fff; padding: 10px 0; cursor: pointer; font-weight: bold; }
+    .level-btn:hover { background: rgba(255,255,255,0.1); }
+    .level-btn.current { border-color: var(--accent); background: var(--accent); color: #000; }
+
+    .menu-actions { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
+    button.primary, button.secondary { border-radius: 8px; padding: 10px 24px; font-size: 1rem; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
+    button.primary { background: var(--accent); color: #000; box-shadow: 0 4px 15px rgba(0,255,136,0.3); }
+    button.primary:active { transform: translateY(2px); box-shadow: none; }
+    button.secondary { background: rgba(255,255,255,0.1); color: #fff; }
+
+    .touch-controls { position: absolute; inset-inline: 0; bottom: 20px; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; }
+    .touch-group { display: flex; gap: 15px; pointer-events: auto; }
+    .touch-btn {
+      width: 70px; height: 70px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); color: #fff; font-size: 1.5rem;
+      display: flex; align-items: center; justify-content: center; user-select: none; touch-action: none;
     }
-
-    .switch.active::after {
-      left: 34px;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      display: block;
+    .touch-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.95); }
+    
+    @media (max-width: 720px) {
+      .bike-row { grid-template-columns: repeat(2, 1fr); }
+      .touch-btn { width: 60px; height: 60px; font-size: 1.2rem; }
     }
   </style>
 </head>
-
 <body>
+  <div id="game-root">
+    <header class="top-bar">
+      <div class="logo"><span class="logo-main">JC</span><span class="logo-sub">MX</span></div>
+      <div class="top-meta">
+        <span id="hud-trick" class="pill pill-trick">FLIP +1000</span>
+        <span id="hud-time" class="pill">0.00s</span>
+      </div>
+    </header>
 
-  <div id="topbar">
-    <span>Light Mode</span>
-    <div id="themeSwitch" class="switch"></div>
-    <span>Dark Mode</span>
+    <main class="game-shell">
+      <canvas id="game-canvas"></canvas>
+
+      <div class="menu-overlay hidden" id="main-menu">
+        <div class="menu-panel">
+          <h1>JCMX Pro</h1>
+          
+          <div class="menu-section">
+            <h2>Garage</h2>
+            <div class="bike-row">
+              <div class="bike-card" data-bike="xk"><div class="bike-color" style="background:#00ff66;"></div><div class="bike-label">250cc 2-Stroke</div></div>
+              <div class="bike-card" data-bike="zy"><div class="bike-color" style="background:#4da3ff;"></div><div class="bike-label">450cc 4-Stroke</div></div>
+              <div class="bike-card" data-bike="rc"><div class="bike-color" style="background:#ff3b4f;"></div><div class="bike-label">Vintage 500cc</div></div>
+              <div class="bike-card" data-bike="cfr"><div class="bike-color" style="background:#ffae00;"></div><div class="bike-label">Factory Rally</div></div>
+            </div>
+          </div>
+
+          <div class="menu-section">
+            <h2>Tracks</h2>
+            <div class="level-grid" id="level-grid"></div>
+          </div>
+
+          <div class="menu-actions">
+            <button id="btn-play" class="primary">RIDE</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-overlay hidden" id="finish-menu">
+        <div class="menu-panel" style="min-width: 300px; text-align: center;">
+          <h2>Track Cleared!</h2>
+          <h1 id="finish-time" style="color: var(--accent); margin: 10px 0;">0.00s</h1>
+          <p id="finish-tricks" style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px;">Tricks: 0</p>
+          <div class="menu-actions">
+            <button id="btn-next-level" class="primary">Next Track</button>
+            <button id="btn-finish-menu" class="secondary">Menu</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="touch-controls">
+        <div class="touch-group">
+          <button class="touch-btn" id="btn-lean-left">⟲</button>
+          <button class="touch-btn" id="btn-lean-right">⟳</button>
+        </div>
+        <div class="touch-group">
+          <button class="touch-btn" id="btn-brake" style="background: rgba(255, 75, 92, 0.3);">⛔</button>
+          <button class="touch-btn" id="btn-gas" style="background: rgba(0, 255, 136, 0.2);">▲</button>
+        </div>
+      </div>
+    </main>
   </div>
 
-  <iframe id="proxyFrame" src="https://hi.dvlcube.com/" allowfullscreen></iframe>
+  <audio id="engine-sound" src="two_stroke.mp3" preload="auto" loop></audio>
 
   <script>
-    /* ------------------ DARK MODE ------------------ */
-    const themeSwitch = document.getElementById("themeSwitch");
+    const canvas = document.getElementById("game-canvas");
+    const ctx = canvas.getContext("2d");
 
-    function applyTheme(mode) {
-      if (mode === "dark") {
-        document.body.classList.add("dark");
-        themeSwitch.classList.add("active");
-      } else {
-        document.body.classList.remove("dark");
-        themeSwitch.classList.remove("active");
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const W = () => canvas.getBoundingClientRect().width;
+    const H = () => canvas.getBoundingClientRect().height;
+
+    // UI Elements
+    const hudTime = document.getElementById("hud-time");
+    const hudTrick = document.getElementById("hud-trick");
+    const mainMenu = document.getElementById("main-menu");
+    const finishMenu = document.getElementById("finish-menu");
+    const levelGrid = document.getElementById("level-grid");
+    const engineSound = document.getElementById("engine-sound");
+
+    // Input State
+    const input = { left: false, right: false, gas: false, brake: false };
+    const bindBtn = (id, key) => {
+      const el = document.getElementById(id);
+      const start = (e) => { e.preventDefault(); input[key] = true; };
+      const end = (e) => { e.preventDefault(); input[key] = false; };
+      el.addEventListener("pointerdown", start);
+      el.addEventListener("touchstart", start);
+      ['pointerup','pointerleave','touchend','touchcancel'].forEach(ev => el.addEventListener(ev, end));
+    };
+    bindBtn("btn-lean-left", "left"); bindBtn("btn-lean-right", "right");
+    bindBtn("btn-gas", "gas"); bindBtn("btn-brake", "brake");
+
+    window.addEventListener("keydown", e => {
+      if(e.key === "ArrowLeft" || e.key === "a") input.left = true;
+      if(e.key === "ArrowRight" || e.key === "d") input.right = true;
+      if(e.key === "ArrowUp" || e.key === "w") input.gas = true;
+      if(e.key === "ArrowDown" || e.key === "s" || e.key === " ") input.brake = true;
+    });
+    window.addEventListener("keyup", e => {
+      if(e.key === "ArrowLeft" || e.key === "a") input.left = false;
+      if(e.key === "ArrowRight" || e.key === "d") input.right = false;
+      if(e.key === "ArrowUp" || e.key === "w") input.gas = false;
+      if(e.key === "ArrowDown" || e.key === "s" || e.key === " ") input.brake = false;
+    });
+
+    // Game Config & State
+    const bikes = [
+      { id: "xk", color: "#00ff66", speed: 18, accel: 0.35, grip: 1.0, air: 1.0 },
+      { id: "zy", color: "#4da3ff", speed: 20, accel: 0.30, grip: 0.9, air: 0.8 },
+      { id: "rc", color: "#ff3b4f", speed: 17, accel: 0.45, grip: 1.1, air: 1.2 },
+      { id: "cfr", color: "#ffae00", speed: 22, accel: 0.40, grip: 0.8, air: 0.9 }
+    ];
+    let currentBikeIndex = 0;
+    let currentLevel = 0;
+    
+    const gameState = {
+      running: false, time: 0, lastFrame: performance.now(), tricks: 0, 
+      airRot: 0, lastAngle: 0
+    };
+
+    const bike = {
+      x: 100, y: 0, vx: 0, vy: 0, angle: 0, angVel: 0, 
+      frontGrounded: false, rearGrounded: false,
+      wheelbase: 36, rideHeight: 20, dead: false
+    };
+
+    const camera = { x: 0, y: 0 };
+    let track = [];
+    let particles = [];
+    let finishLineX = 0;
+
+    // Level Generation
+    function generateTrack(levelIdx) {
+      track = [];
+      const length = 3000 + (levelIdx * 500);
+      let x = 0;
+      let y = H() * 0.7;
+      let phase = 0;
+
+      while(x < length) {
+        // Procedural terrain generation using sine waves
+        const intensity = 0.4 + (levelIdx * 0.05);
+        y += (Math.sin(phase) * 30 + Math.cos(phase * 2.3) * 15) * intensity;
+        
+        // Add random bumps
+        if(Math.random() < 0.1) y -= Math.random() * 20;
+
+        track.push({ x, y });
+        x += 25; // Resolution
+        phase += 0.15;
       }
-      localStorage.setItem("jc_theme", mode);
+      finishLineX = track[track.length - 2].x;
+      
+      bike.x = 100;
+      bike.y = getTrackY(100) - 50;
+      bike.vx = bike.vy = bike.angle = bike.angVel = 0;
+      bike.dead = false;
+      gameState.time = 0;
+      gameState.tricks = 0;
+      gameState.airRot = 0;
+      camera.x = 0; camera.y = bike.y - H()*0.5;
     }
 
-    applyTheme(localStorage.getItem("jc_theme") || "light");
+    function getTrackY(xPos) {
+      if (xPos <= track[0].x) return track[0].y;
+      if (xPos >= track[track.length - 1].x) return track[track.length - 1].y;
+      
+      const step = 25;
+      const i = Math.floor(xPos / step);
+      if (i >= track.length - 1) return track[track.length - 1].y;
+      
+      const p1 = track[i];
+      const p2 = track[i+1];
+      const t = (xPos - p1.x) / (p2.x - p1.x);
+      return p1.y + (p2.y - p1.y) * t;
+    }
 
-    themeSwitch.onclick = () => {
-      const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
-      applyTheme(newTheme);
-    };
-
-    /* ------------------ BLOCK NEW TABS ------------------ */
-
-    // Block window.open inside iframe
-    const iframe = document.getElementById("proxyFrame");
-
-    iframe.onload = () => {
-      try {
-        const win = iframe.contentWindow;
-
-        // Override window.open
-        win.open = function() {
-          console.log("Blocked window.open()");
-          return null;
-        };
-
-        // Override target=_blank links
-        win.document.addEventListener("click", (e) => {
-          const link = e.target.closest("a");
-          if (link && link.target === "_blank") {
-            e.preventDefault();
-            console.log("Blocked new tab link");
-          }
-        });
-
-      } catch (err) {
-        // Cross-origin protection (normal)
+    // Physics Engine (2-Point Suspension System)
+    function updatePhysics(dt) {
+      if (!gameState.running || bike.dead) {
+         if(bike.dead) {
+            bike.x += bike.vx;
+            bike.y += bike.vy;
+            bike.vy += 0.5; // Gravity
+            bike.angle += bike.angVel;
+         }
+         return;
       }
+
+      gameState.time += dt;
+      const stats = bikes[currentBikeIndex];
+
+      // Gravity
+      bike.vy += 0.4; 
+
+      // Wheel Positions based on angle
+      const cosA = Math.cos(bike.angle);
+      const sinA = Math.sin(bike.angle);
+      
+      const rearX = bike.x - (bike.wheelbase/2) * cosA;
+      const rearY = bike.y - (bike.wheelbase/2) * sinA + bike.rideHeight;
+      const frontX = bike.x + (bike.wheelbase/2) * cosA;
+      const frontY = bike.y + (bike.wheelbase/2) * sinA + bike.rideHeight;
+
+      // Track height at wheels
+      const trackRearY = getTrackY(rearX);
+      const trackFrontY = getTrackY(frontX);
+
+      bike.rearGrounded = rearY >= trackRearY;
+      bike.frontGrounded = frontY >= trackFrontY;
+
+      // Suspension & Terrain Following
+      if (bike.rearGrounded || bike.frontGrounded) {
+        // Target angle based on terrain slope beneath wheels
+        const targetAngle = Math.atan2(trackFrontY - trackRearY, bike.wheelbase);
+        // Target Y to keep wheels on ground
+        const targetY = ((trackFrontY + trackRearY) / 2) - bike.rideHeight;
+
+        // Smooth spring interpolation
+        bike.y += (targetY - bike.y) * 0.4;
+        bike.vy = 0; 
+        
+        // Align bike to ground smoothly
+        let angleDiff = targetAngle - bike.angle;
+        // Normalize angle difference
+        while(angleDiff > Math.PI) angleDiff -= Math.PI*2;
+        while(angleDiff < -Math.PI) angleDiff += Math.PI*2;
+        
+        bike.angle += angleDiff * 0.3;
+        bike.angVel = 0;
+
+        // Trick check
+        if(Math.abs(gameState.airRot) > Math.PI * 1.5) {
+            gameState.tricks++;
+            hudTrick.style.display = "block";
+            setTimeout(() => hudTrick.style.display = "none", 1500);
+        }
+        gameState.airRot = 0;
+
+        // Ground Controls
+        if (input.gas) {
+          bike.vx += stats.accel;
+          if(Math.random() < 0.3) spawnParticle(rearX, rearY, -bike.vx*0.5, -2, "#5c4033"); // Dirt
+        }
+        if (input.brake) bike.vx *= (1 - 0.05 * stats.grip);
+        if (input.left) bike.vx -= 0.1; // Shift weight back
+        if (input.right) bike.vx += 0.1; // Shift weight forward
+
+      } else {
+        // Air Controls
+        if (input.left) bike.angVel -= 0.003 * stats.air;
+        if (input.right) bike.angVel += 0.003 * stats.air;
+        
+        // Track flips
+        let delta = bike.angle - gameState.lastAngle;
+        while(delta > Math.PI) delta -= Math.PI*2;
+        while(delta < -Math.PI) delta += Math.PI*2;
+        gameState.airRot += delta;
+      }
+      
+      gameState.lastAngle = bike.angle;
+
+      // Friction & Drag
+      bike.vx *= 0.99;
+      if (bike.vx > stats.speed) bike.vx = stats.speed;
+
+      // Apply Velocity
+      bike.x += bike.vx;
+      bike.y += bike.vy;
+      bike.angle += bike.angVel;
+
+      // Crash Detection
+      if(bike.frontGrounded && angleDiff && Math.abs(angleDiff) > 1.2) crash();
+      if(bike.y > getTrackY(bike.x) + 20) crash(); // Frame hit ground hard
+
+      // Engine Sound
+      if(input.gas) {
+        if(engineSound.paused) engineSound.play().catch(()=>{});
+        engineSound.playbackRate = 1.0 + (bike.vx / stats.speed) * 1.5;
+        // Exhaust Smoke
+        if(Math.random() < 0.2) spawnParticle(bike.x - 20*cosA, bike.y - 10, -1, -1, "rgba(200,200,200,0.5)");
+      } else {
+        engineSound.playbackRate = 0.8;
+      }
+
+      // Camera Follow
+      camera.x += (bike.x - W()*0.3 - camera.x) * 0.1;
+      camera.y += (bike.y - H()*0.6 - camera.y) * 0.1;
+
+      // Win Condition
+      if(bike.x >= finishLineX) {
+          gameState.running = false;
+          engineSound.pause();
+          document.getElementById('finish-time').innerText = gameState.time.toFixed(2) + "s";
+          document.getElementById('finish-tricks').innerText = `Backflips/Frontflips: ${gameState.tricks}`;
+          finishMenu.classList.remove('hidden');
+      }
+
+      // Update UI
+      hudTime.innerText = gameState.time.toFixed(2) + "s";
+    }
+
+    function crash() {
+        if(bike.dead) return;
+        bike.dead = true;
+        bike.vx = 0; 
+        bike.vy = -5; // Bounce up
+        bike.angVel = (Math.random() - 0.5) * 0.5;
+        setTimeout(() => generateTrack(currentLevel), 1500); // Restart
+    }
+
+    function spawnParticle(x, y, vx, vy, color) {
+        particles.push({x, y, vx, vy, color, life: 1.0});
+    }
+
+    // High Quality Render Engine
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Parallax Background
+      const w = W(), h = H();
+      
+      // Sky gradient
+      const grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0, "#0a1128"); grad.addColorStop(1, "#1c2a4f");
+      ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+
+      // Mountains (Layer 1 - Slow)
+      ctx.fillStyle = "#121a30";
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for(let i=0; i<w; i+=50) {
+          ctx.lineTo(i, h*0.5 + Math.sin((i + camera.x*0.1)*0.005)*100);
+      }
+      ctx.lineTo(w, h); ctx.fill();
+
+      // Hills (Layer 2 - Medium)
+      ctx.fillStyle = "#18233e";
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for(let i=0; i<w; i+=30) {
+          ctx.lineTo(i, h*0.6 + Math.cos((i + camera.x*0.3)*0.01)*60);
+      }
+      ctx.lineTo(w, h); ctx.fill();
+
+      // Track Terrain
+      if(track.length > 0) {
+          ctx.fillStyle = "#3b2f23"; // Dirt
+          ctx.beginPath();
+          ctx.moveTo(track[0].x - camera.x, h + camera.y);
+          for(let p of track) {
+              ctx.lineTo(p.x - camera.x, p.y - camera.y);
+          }
+          ctx.lineTo(track[track.length-1].x - camera.x, h + camera.y);
+          ctx.fill();
+
+          // Grass/Top layer
+          ctx.strokeStyle = "#4a6b2c";
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          for(let p of track) {
+              ctx.lineTo(p.x - camera.x, p.y - camera.y);
+          }
+          ctx.stroke();
+
+          // Finish Line Marker
+          const fx = finishLineX - camera.x;
+          const fy = getTrackY(finishLineX) - camera.y;
+          ctx.fillStyle = "white"; ctx.fillRect(fx, fy - 100, 5, 100); // Pole
+          // Checkered Flag
+          for(let r=0; r<4; r++) {
+              for(let c=0; c<6; c++) {
+                  ctx.fillStyle = (r+c)%2===0 ? "white" : "black";
+                  ctx.fillRect(fx + 5 + c*8, fy - 100 + r*8, 8, 8);
+              }
+          }
+      }
+
+      // Particles
+      for(let i = particles.length-1; i>=0; i--) {
+          let p = particles[i];
+          p.x += p.vx; p.y += p.vy;
+          p.vy += 0.1; // gravity
+          p.life -= 0.02;
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.beginPath(); ctx.arc(p.x - camera.x, p.y - camera.y, 3, 0, Math.PI*2); ctx.fill();
+          if(p.life <= 0) particles.splice(i, 1);
+      }
+      ctx.globalAlpha = 1.0;
+
+      // Realistic Bike Rendering
+      ctx.save();
+      ctx.translate(bike.x - camera.x, bike.y - camera.y);
+      ctx.rotate(bike.angle);
+
+      const color = bikes[currentBikeIndex].color;
+
+      // Helper function for wheels
+      const drawWheel = (wx, wy) => {
+          ctx.save();
+          ctx.translate(wx, wy);
+          ctx.rotate((bike.x) * 0.1); // Spin based on distance
+          // Knobby Tire
+          ctx.lineWidth = 4; ctx.strokeStyle = "#111";
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI*2); ctx.stroke();
+          ctx.setLineDash([]);
+          // Rim
+          ctx.lineWidth = 2; ctx.strokeStyle = "#888";
+          ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI*2); ctx.stroke();
+          // Spokes
+          ctx.lineWidth = 1; ctx.strokeStyle = "#ccc";
+          for(let i=0; i<6; i++) {
+              ctx.beginPath(); ctx.moveTo(0,0); 
+              ctx.lineTo(Math.cos(i*Math.PI/3)*9, Math.sin(i*Math.PI/3)*9); 
+              ctx.stroke();
+          }
+          ctx.restore();
+      };
+
+      // Draw Wheels
+      const hw = bike.wheelbase/2;
+      drawWheel(-hw, bike.rideHeight); // Rear
+      drawWheel(hw, bike.rideHeight);  // Front
+
+      // Frame / Swingarm / Forks
+      ctx.strokeStyle = "#bbb"; ctx.lineWidth = 3; ctx.lineCap = "round";
+      ctx.beginPath(); 
+      ctx.moveTo(-hw, bike.rideHeight); // Rear axle
+      ctx.lineTo(-5, 0); // Pivot
+      ctx.lineTo(10, -5); // Steering head
+      ctx.lineTo(hw, bike.rideHeight); // Front axle (Forks)
+      ctx.stroke();
+
+      // Engine Block
+      ctx.fillStyle = "#333";
+      ctx.fillRect(-8, 2, 14, 12);
+      ctx.fillStyle = "#555";
+      ctx.fillRect(-5, -2, 8, 8); // Cylinder
+      
+      // Exhaust
+      ctx.strokeStyle = "#777"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-15, 15, -hw-5, bike.rideHeight-5); ctx.stroke();
+
+      // Plastics & Tank
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-10, -5); // Seat rear
+      ctx.lineTo(5, -8); // Tank high
+      ctx.lineTo(12, -2); // Shroud front
+      ctx.lineTo(5, 5); // Shroud bottom
+      ctx.fill();
+
+      // Seat
+      ctx.fillStyle = "#111";
+      ctx.beginPath(); ctx.moveTo(-15, -3); ctx.lineTo(2, -8); ctx.lineTo(4, -5); ctx.lineTo(-12, 0); ctx.fill();
+
+      // Dynamic Rider Rendering
+      if(!bike.dead) {
+          // Body leans based on input
+          let leanX = 0;
+          if(input.right) leanX = 8;
+          if(input.left) leanX = -8;
+          
+          const hipX = -5, hipY = -5;
+          const shoulderX = hipX + leanX, shoulderY = hipY - 15;
+
+          // Legs
+          ctx.strokeStyle = "#222"; ctx.lineWidth = 4; ctx.lineJoin = "round";
+          ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(0, 5); ctx.lineTo(-2, 10); ctx.stroke(); // Footpeg
+          
+          // Torso
+          ctx.strokeStyle = color; ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(shoulderX, shoulderY); ctx.stroke();
+          
+          // Arms
+          ctx.strokeStyle = color; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(5, -8); ctx.lineTo(10, -10); ctx.stroke(); // To Handlebars
+          
+          // Helmet
+          ctx.fillStyle = color;
+          ctx.beginPath(); ctx.arc(shoulderX + (leanX*0.2), shoulderY - 6, 5, 0, Math.PI*2); ctx.fill();
+          // Goggles/Visor
+          ctx.fillStyle = "#111";
+          ctx.fillRect(shoulderX + (leanX*0.2) + 2, shoulderY - 8, 4, 3);
+      }
+
+      ctx.restore();
+    }
+
+    // Main Loop
+    function loop(now) {
+      requestAnimationFrame(loop);
+      const dt = Math.min((now - gameState.lastFrame) / 1000, 0.1);
+      gameState.lastFrame = now;
+      
+      updatePhysics(dt);
+      draw();
+    }
+
+    // UI Logic
+    function buildLevelMenu() {
+        levelGrid.innerHTML = "";
+        for(let i=0; i<20; i++) {
+            let btn = document.createElement("button");
+            btn.className = "level-btn" + (i===currentLevel ? " current" : "");
+            btn.innerText = "Track " + (i+1);
+            btn.onclick = () => { currentLevel = i; buildLevelMenu(); };
+            levelGrid.appendChild(btn);
+        }
+    }
+
+    document.querySelectorAll('.bike-card').forEach((card, idx) => {
+        card.onclick = () => {
+            document.querySelectorAll('.bike-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            currentBikeIndex = idx;
+        }
+    });
+
+    document.getElementById('btn-play').onclick = () => {
+        mainMenu.classList.add('hidden');
+        generateTrack(currentLevel);
+        gameState.running = true;
     };
+
+    document.getElementById('btn-next-level').onclick = () => {
+        finishMenu.classList.add('hidden');
+        currentLevel++;
+        buildLevelMenu();
+        generateTrack(currentLevel);
+        gameState.running = true;
+    };
+
+    document.getElementById('btn-finish-menu').onclick = () => {
+        finishMenu.classList.add('hidden');
+        mainMenu.classList.remove('hidden');
+    };
+
+    // Init
+    buildLevelMenu();
+    document.querySelectorAll('.bike-card')[0].classList.add('active');
+    requestAnimationFrame(loop);
+
   </script>
 </body>
 </html>
